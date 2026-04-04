@@ -1,0 +1,46 @@
+# Web framework + ASGI server
+fastapi
+uvicorn[standard]
+
+# Scheduling
+apscheduler
+
+# Validation + config
+pydantic
+pydantic-settings
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Redis
+redis
+hiredis
+
+# Async HTTP client
+httpx
+
+# LLM
+groq
+
+# Embeddings + vector DB
+sentence-transformers
+chromadb
+
+# Parsing
+lxml
+pymupdf
+
+# Telegram
+python-telegram-bot
+
+# Config
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+
+# Linting
+ruff

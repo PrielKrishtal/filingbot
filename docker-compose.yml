@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: filingbot_db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  ingestion:
+    build: .
+    command: python -m ingestion.main
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  classification:
+    build: .
+    command: python -m workers.classification.main
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  enrichment:
+    build: .
+    command: python -m workers.enrichment.main
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  notification:
+    build: .
+    command: python -m workers.notification.main
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  telegram_bot:
+    build: .
+    command: python -m telegram_bot.main
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
