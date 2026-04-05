@@ -34,3 +34,6 @@ htmlcov/
 # IDE
 .vscode/
 .idea/
+
+# Assets (local only)
+assets/
