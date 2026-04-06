@@ -37,3 +37,6 @@ htmlcov/
 
 # Assets (local only)
 assets/
+
+# Claude AI memory
+.claude/
