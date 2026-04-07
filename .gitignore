@@ -35,8 +35,10 @@ htmlcov/
 .vscode/
 .idea/
 
-# Assets (local only)
-assets/
 
 # Claude AI memory
 .claude/
+
+# Logs
+*.log
+logs/

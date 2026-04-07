@@ -38,6 +38,9 @@ python-telegram-bot
 # Config
 python-dotenv
 
+# Logging
+python-json-logger
+
 # Testing
 pytest
 pytest-asyncio
