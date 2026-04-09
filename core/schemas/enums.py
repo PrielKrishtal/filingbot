@@ -21,6 +21,7 @@ class TransactionCode(Enum):
     M = "M"                             
     A = "A"                                 
     G = "G"
+    F = "F"
     
 class TransactionClassification(Enum):
     voluntary_purchase = "voluntary_purchase"
