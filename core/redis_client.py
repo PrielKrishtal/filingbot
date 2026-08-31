@@ -9,8 +9,8 @@ async def publish(stream: str, message: dict) -> None:
 async def ack(stream: str, group:str, message_id: str) -> None:
     return await redis_client.xack(stream,group, message_id)
 
-async def consume(groupname: str, consumername:str, stream:str , block: int = 0, count:int = 10) -> list:
-    return await redis_client.xreadgroup(groupname, consumername, block, count, {stream: '>'})
+async def consume(groupname: str, consumername: str, stream: str, block: int = 0, count: int = 10) -> list:
+    return await redis_client.xreadgroup(groupname, consumername, {stream: '>'}, count, block)
 
 async def dead_letter(message: str, error:str, stream:str,retries: int = 3) -> None:
     return await redis_client.xadd("filing.dead_letter",{

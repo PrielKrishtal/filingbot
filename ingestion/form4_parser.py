@@ -4,6 +4,18 @@ from decimal import Decimal
 from core.schemas.filing import InsiderFiling                                                                                                                                               
 from core.schemas.enums import TransactionCode
 
+def xpath_text(root, path: str) -> str:
+    matches = root.xpath(path)
+    if not matches:
+        raise ValueError(f"missing field: {path}")
+    return matches[0]
+
+def xpath_bool(root, path: str, default: bool = False) -> bool:
+    matches = root.xpath(path)
+    if not matches:
+        return default
+    return matches[0] in ("true", "1")
+
 
 
 def parse_form4(xml_content: str, accession_number: str, filing_date: datetime) -> InsiderFiling:
@@ -12,15 +24,15 @@ def parse_form4(xml_content: str, accession_number: str, filing_date: datetime) 
     return InsiderFiling(                                                                                                                                                                       
         accession_number= accession_number,                    
         filing_date = filing_date,                                                                                                                                                                
-        issuer_name = root.xpath("//issuerName/text()")[0],                                                                                                                                                                        
-        issuer_ticker = root.xpath("//issuerTradingSymbol/text()")[0],                                                                                                                                                                     
-        issuer_cik = root.xpath("//issuerCik/text()")[0],                                          
-        insider_name = root.xpath("//rptOwnerName/text()")[0],   
-        insider_title = root.xpath("//officerTitle/text()")[0],   
-        transaction_code = TransactionCode(root.xpath("//nonDerivativeTransaction/transactionCoding/transactionCode/text()")[0]),
-        shares_traded = Decimal(root.xpath("//nonDerivativeTransaction/transactionAmounts/transactionShares/value/text()")[0]),
-        price_per_share = Decimal(root.xpath("//nonDerivativeTransaction/transactionAmounts/transactionPricePerShare/value/text()")[0]),
-        total_value = Decimal(root.xpath("//nonDerivativeTransaction/transactionAmounts/transactionShares/value/text()")[0]) * Decimal(root.xpath("//nonDerivativeTransaction/transactionAmounts/transactionPricePerShare/value/text()")[0]),
-        shares_owned_after = Decimal(root.xpath("//nonDerivativeTransaction/postTransactionAmounts/sharesOwnedFollowingTransaction/value/text()")[0]),
-        is_10b5_1 = root.xpath("//aff10b5One/text()")[0] in ("true", "1") if root.xpath("//aff10b5One/text()") else False
+        issuer_name = xpath_text(root,"//issuerName/text()"),                                                                                                                                                                        
+        issuer_ticker = xpath_text(root,"//issuerTradingSymbol/text()"),                                                                                                                                                                     
+        issuer_cik = xpath_text(root,"//issuerCik/text()"),                                          
+        insider_name = xpath_text(root,"//rptOwnerName/text()"),   
+        insider_title = xpath_text(root,"//officerTitle/text()"),  
+        transaction_code = TransactionCode(xpath_text(root,"//nonDerivativeTransaction/transactionCoding/transactionCode/text()")),
+        shares_traded = Decimal(xpath_text(root,"//nonDerivativeTransaction/transactionAmounts/transactionShares/value/text()")),
+        price_per_share = Decimal(xpath_text(root,"//nonDerivativeTransaction/transactionAmounts/transactionPricePerShare/value/text()")),
+        total_value = Decimal(xpath_text(root,"//nonDerivativeTransaction/transactionAmounts/transactionShares/value/text()")) * Decimal(xpath_text(root,"//nonDerivativeTransaction/transactionAmounts/transactionPricePerShare/value/text()")),
+        shares_owned_after = Decimal(xpath_text(root,"//nonDerivativeTransaction/postTransactionAmounts/sharesOwnedFollowingTransaction/value/text()")),
+        is_10b5_1 = xpath_bool(root, "//aff10b5One/text()")
     )

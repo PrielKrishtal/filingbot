@@ -15,6 +15,7 @@ build/
 
 # Project-specific (private)
 CLAUDE.md
+ARCHITECTURE.md
 docs/
 
 # ChromaDB local persistence

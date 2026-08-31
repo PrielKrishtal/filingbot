@@ -16,12 +16,12 @@ class PipelineStatus(Enum):
     
 
 class TransactionCode(Enum):
-    P = "P"                   
-    S = "S"                                       
-    M = "M"                             
-    A = "A"                                 
-    G = "G"
-    F = "F"
+    P = "P"  # open market or private Purchase
+    S = "S"  # open market or private Sale
+    M = "M"  # exercise/conversion of a derivative security (e.g. stock option exercise)
+    A = "A"  # grant/Award/other acquisition (e.g. RSU grant)
+    G = "G"  # Gift
+    F = "F"  # shares withheld/sold to pay taxes on a Filer's vesting (tax withholding)
     
 class TransactionClassification(Enum):
     voluntary_purchase = "voluntary_purchase"
