@@ -46,4 +46,4 @@ pytest
 pytest-asyncio
 
 # Linting
-ruff
+ruff==0.16.5

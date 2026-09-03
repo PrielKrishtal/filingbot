@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class SignalStrength(Enum):
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"

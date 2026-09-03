@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
+
 from core.schemas.enums import TransactionCode
 from ingestion.form4_parser import parse_form4
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 ACCESSION = "0001234567-26-000001"
-FILING_DATE = datetime(2026, 3, 31)
+FILING_DATE = datetime(2026, 3, 31, tzinfo=timezone.utc)
 
 
 def load(filename: str) -> str:
@@ -23,10 +24,10 @@ def test_parse_tesla_option_exercise():
     assert filing.insider_name == "Zhu Xiaotong"
     assert filing.insider_title == "SVP"
     assert filing.transaction_code == TransactionCode.M
-    assert filing.shares_traded == Decimal("20000")
+    assert filing.shares_traded == Decimal(20000)
     assert filing.price_per_share == Decimal("20.57")
-    assert filing.total_value == Decimal("20000") * Decimal("20.57")
-    assert filing.shares_owned_after == Decimal("20000")
+    assert filing.total_value == Decimal(20000) * Decimal("20.57")
+    assert filing.shares_owned_after == Decimal(20000)
     assert filing.is_10b5_1 is False
 
 
@@ -46,7 +47,7 @@ def test_parse_tesla_cfo_exercise_and_sale():
     assert filing.insider_name == "Taneja Vaibhav"
     assert filing.insider_title == "Chief Financial Officer"
     assert filing.transaction_code == TransactionCode.M
-    assert filing.shares_traded == Decimal("6538")
+    assert filing.shares_traded == Decimal(6538)
 
 
 def test_parse_microsoft_tax_withholding():

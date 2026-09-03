@@ -3,3 +3,11 @@ repos:
     rev: v0.11.4
     hooks:
       - id: ruff
+
+  - repo: local
+    hooks:
+      - id: strip-claude-attribution
+        name: Strip Claude co-author attribution
+        entry: sed -i "/^Co-authored-by:.*[Cc]laude/Id" --
+        language: system
+        stages: [commit-msg]

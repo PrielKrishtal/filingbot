@@ -1,11 +1,13 @@
-from lxml import etree
+import logging
 from datetime import datetime, timezone
-from core.schemas.filing import InsiderFiling
-from ingestion.rate_limiter import throttled_get
-from ingestion.form4_parser import parse_form4
+
+from lxml import etree
+
 from core.config import settings
 from core.logging_config import get_logger
-import logging
+from core.schemas.filing import InsiderFiling
+from ingestion.form4_parser import parse_form4
+from ingestion.rate_limiter import throttled_get
 
 base_logger = get_logger("ingestion")
 
@@ -85,6 +87,7 @@ async def poll_new_filings(since: datetime) -> list[InsiderFiling]:
             filing = parse_form4(xml_response.text, accession, filing_date)
             filings.append(filing)
         except Exception:
+            log.exception("failed to parse filing")
             continue
 
     return filings

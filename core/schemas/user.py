@@ -1,8 +1,9 @@
+
 from pydantic import BaseModel
-from typing import Optional
+
 
 class User(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None
     telegram_chat_id: int                                   
     watchlist: list[str]                                      
     is_active: bool                                    

@@ -1,18 +1,18 @@
+import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from core.logging_config import get_logger
 from datetime import datetime, timezone
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
-from ingestion.edgar_poller import poll_new_filings
-from core.schemas.filing import InsiderFiling
-from core.redis_client import publish,set_value,get_value
-from core.database.session import AsyncSessionLocal
-from core.database.models import Filing
 from sqlalchemy.exc import IntegrityError
-from typing import AsyncGenerator
-import logging
 
-
+from core.database.models import Filing
+from core.database.session import AsyncSessionLocal
+from core.logging_config import get_logger
+from core.redis_client import get_value, publish, set_value
+from core.schemas.filing import InsiderFiling
+from ingestion.edgar_poller import poll_new_filings
 
 base_logger = get_logger("ingestion")
 since = datetime.now(timezone.utc)

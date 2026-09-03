@@ -1,7 +1,13 @@
-from pydantic import BaseModel
+from datetime import datetime
 from decimal import Decimal
-from datetime import  datetime
-from core.schemas.enums import SignalStrength,TransactionCode,TransactionClassification
+
+from pydantic import BaseModel
+
+from core.schemas.enums import (
+    SignalStrength,
+    TransactionClassification,
+    TransactionCode,
+)
 
 
 class InsiderFiling(BaseModel):

@@ -1,8 +1,11 @@
-from lxml import etree                                                                                                                                                                      
-from datetime import datetime                             
-from decimal import Decimal                                                                                                                                                                 
-from core.schemas.filing import InsiderFiling                                                                                                                                               
+from datetime import datetime
+from decimal import Decimal
+
+from lxml import etree
+
 from core.schemas.enums import TransactionCode
+from core.schemas.filing import InsiderFiling
+
 
 def xpath_text(root, path: str) -> str:
     matches = root.xpath(path)

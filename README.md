@@ -24,7 +24,10 @@ FilingBot automates the entire workflow:
 ---
 
 ## Architecture
-![FilingBot Pipeline](assets/filingbot_pipeline.png)
+<p align="center">
+  <img src="assets/filingbot_pipeline_new.png" alt="FilingBot Pipeline" width="600">
+</p>
+
 ```
 [APScheduler] → edgar_poller → Redis:filing.raw
     → [Classification Worker] → Redis:filing.classified

@@ -1,11 +1,28 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from core.database.session import Base
-from sqlalchemy import Numeric, func, String, Enum, DateTime, BigInteger, JSON, Integer, Date
-from decimal import Decimal
-from datetime import datetime, date
-from typing import Optional
 import uuid
-from core.schemas.enums import SignalStrength, TransactionCode, TransactionClassification, PipelineStatus
+from datetime import date, datetime
+from decimal import Decimal
+
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Date,
+    DateTime,
+    Enum,
+    Integer,
+    Numeric,
+    String,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from core.database.session import Base
+from core.schemas.enums import (
+    PipelineStatus,
+    SignalStrength,
+    TransactionClassification,
+    TransactionCode,
+)
+
 
 class Filing(Base):
     __tablename__ = "filings"
@@ -35,7 +52,7 @@ class Filing(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    updated_at: Mapped[Optional[datetime]] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(
       DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
 
@@ -47,7 +64,7 @@ class User(Base):
         String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True
     )
     telegram_chat_id: Mapped[int] = mapped_column(BigInteger, unique=True)
-    username: Mapped[Optional[str]] = mapped_column(nullable=True)
+    username: Mapped[str | None] = mapped_column(nullable=True)
     watchlist: Mapped[list] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -64,11 +81,11 @@ class InsiderProfile(Base):
     insider_name: Mapped[str]
     issuer_cik: Mapped[str]
     total_filings: Mapped[int] = mapped_column(Integer, default=0)
-    last_purchase_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    last_sale_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    last_purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_sale_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     purchase_count_12m: Mapped[int] = mapped_column(Integer, default=0)
     sale_count_12m: Mapped[int] = mapped_column(Integer, default=0)
-    largest_transaction_value: Mapped[Optional[Decimal]] = mapped_column(Numeric, nullable=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(
+    largest_transaction_value: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
