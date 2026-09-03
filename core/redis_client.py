@@ -17,4 +17,13 @@ async def dead_letter(message: str, error:str, stream:str,retries: int = 3) -> N
                 "original_payload": message,
                 "error": error,
                 "retries": retries,
-                "source_stream": stream})                        
+                "source_stream": stream})      
+
+
+
+async def set_value(key: str, value: str) -> None:
+    await redis_client.set(key, value)
+
+async def get_value(key: str) -> str | None:
+    value = await redis_client.get(key)
+    return value.decode() if value else None

@@ -13,7 +13,7 @@ class Filing(Base):
         String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True
     )
     accession_number: Mapped[str] = mapped_column(String, nullable=False,unique=True)
-    filing_date: Mapped[datetime]
+    filing_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     issuer_name: Mapped[str]
     issuer_ticker: Mapped[str]                                
     issuer_cik: Mapped[str]
