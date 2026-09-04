@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from core.database.models import Filing
 from core.schemas.enums import TransactionCode
 from core.schemas.filing import InsiderHistory
