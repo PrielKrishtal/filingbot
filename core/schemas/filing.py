@@ -26,6 +26,15 @@ class InsiderFiling(BaseModel):
     is_10b5_1: bool
 
 
+class InsiderHistory(BaseModel):
+    total_prior_filings: int = 0
+    days_since_last_trade: int | None = None
+    purchase_count_12m: int = 0
+    sale_count_12m: int = 0
+    largest_prior_value: Decimal | None = None
+    is_first_purchase_after_sales: bool
+
+
 class ClassificationResult(BaseModel):
     signal_strength: SignalStrength
     transaction_classification: TransactionClassification
