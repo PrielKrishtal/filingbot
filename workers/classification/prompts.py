@@ -13,6 +13,10 @@ Consider:
 
 signal_strength must be one of: HIGH, MEDIUM, LOW, NOISE.
 transaction_classification must be one of: voluntary_purchase, option_exercise, planned_sale, tax_disposition, gift, other.
+
+enrich controls whether this filing's issuer gets its most recent 10-Q downloaded and
+indexed for deeper investigation. Set enrich=true when signal_strength is HIGH or MEDIUM.
+Set enrich=false when signal_strength is LOW or NOISE.
 """
 
 

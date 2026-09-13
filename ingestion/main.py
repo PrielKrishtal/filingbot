@@ -32,7 +32,7 @@ async def ingestion_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=ingestion_lifespan)
 
 
-async def  process_filing(filing:InsiderFiling ):
+async def process_filing(filing:InsiderFiling ):
     log = logging.LoggerAdapter(base_logger, extra={"correlation_id": filing.accession_number})
     log.info("fetched filing")
 

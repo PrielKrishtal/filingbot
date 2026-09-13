@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from core.schemas.enums import (
     SignalStrength,
@@ -11,6 +11,7 @@ from core.schemas.enums import (
 
 
 class InsiderFiling(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     accession_number: str
     filing_date: datetime                                   
     issuer_name: str                                      
@@ -36,6 +37,7 @@ class InsiderHistory(BaseModel):
 
 
 class ClassificationResult(BaseModel):
+    model_config = ConfigDict(extra="forbid") 
     signal_strength: SignalStrength
     transaction_classification: TransactionClassification
     reasoning: str

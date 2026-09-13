@@ -28,7 +28,7 @@ async def _call_groq(messages: list) -> str:
                 "strict": True,
             },
         },
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
     )
     return chat_completion.choices[0].message.content
 
