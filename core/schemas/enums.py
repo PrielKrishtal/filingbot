@@ -13,7 +13,9 @@ class PipelineStatus(Enum):
     CLASSIFIED = "CLASSIFIED"
     ENRICHED = "ENRICHED"
     NOTIFIED = "NOTIFIED"
-    DONE = "DONE"
+    SKIPPED = "SKIPPED"
+    DONE = "DONE" #TODO: remove this from FSM
+
     
 
 class TransactionCode(Enum):

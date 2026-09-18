@@ -24,9 +24,9 @@ httpx
 # LLM
 groq
 
-# Embeddings + vector DB
-sentence-transformers
-chromadb
+# Embeddings + vector DB(currently not used)
+# sentence-transformers
+# chromadb
 
 # Parsing
 lxml
