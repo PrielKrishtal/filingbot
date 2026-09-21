@@ -66,6 +66,7 @@ class User(Base):
     telegram_chat_id: Mapped[int] = mapped_column(BigInteger, unique=True)
     username: Mapped[str | None] = mapped_column(nullable=True)
     watchlist: Mapped[list] = mapped_column(JSON, default=list)
+    alerts_all: Mapped[bool] = mapped_column(default=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

@@ -47,7 +47,6 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
 
                 result.pipeline_status = PipelineStatus.NOTIFIED
                 await session.commit()
-                
 
             except (TypeError, AttributeError) as e:
                 await dead_letter(
@@ -60,10 +59,11 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
                 await session.rollback()
 
         else:
-            result.pipeline_status = (PipelineStatus.SKIPPED)  # if signal is low,noise skip notifying
+            result.pipeline_status = (
+                PipelineStatus.SKIPPED
+            )  # if signal is low,noise skip notifying
             await session.commit()
 
-        
         await ack("filing.classified", "notification_group", message_id)
 
 
