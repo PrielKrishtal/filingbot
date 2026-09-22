@@ -32,16 +32,19 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
         if result.signal_strength in (SignalStrength.HIGH, SignalStrength.MEDIUM):
             try:
                 message = build_alert_message(result)
-                stmt = select(User.telegram_chat_id)
-                users_chat_id = (await session.execute(stmt)).scalars().all()
+                stmt = select(User.telegram_chat_id,User.alerts_all,User.watchlist)
+                users = (await session.execute(stmt)).all()
 
-                for chat_id in users_chat_id:
+                for users_chat_id,users_alert_all,users_watchlist in users:
+                    if not users_alert_all and result.issuer_ticker.upper() not in users_watchlist:
+                        continue
+
                     try:
-                        await bot.send_message(chat_id=chat_id, text=message)
+                        await bot.send_message(chat_id=users_chat_id, text=message)
 
                     except TelegramError as error:
                         log.error(
-                            f"skipping notification of chat id:{chat_id} due to {error}"
+                            f"skipping notification of chat id:{users_chat_id} due to {error}"
                         )
                         continue
 

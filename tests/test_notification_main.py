@@ -34,17 +34,15 @@ def make_filing(signal_strength: SignalStrength) -> Filing:
 class FakeResult:
     """Stands in for the sync Result object `await session.execute(stmt)` returns."""
 
-    def __init__(self, *, scalar_one=None, scalars_all=None):
+    def __init__(self, *, scalar_one=None, all_rows=None):
         self._scalar_one = scalar_one
-        self._scalars_all = scalars_all
+        self._all_rows = all_rows
 
     def scalar_one(self):
         return self._scalar_one
 
-    def scalars(self):
-        mock = MagicMock()
-        mock.all.return_value = self._scalars_all
-        return mock
+    def all(self):
+        return self._all_rows
 
 
 class FakeSession:
@@ -84,7 +82,10 @@ async def test_sends_to_every_registered_user_and_marks_notified(monkeypatch):
     filing = make_filing(SignalStrength.HIGH)
     chat_ids = [111, 222]
     session = FakeSession(
-        [FakeResult(scalar_one=filing), FakeResult(scalars_all=chat_ids)]
+        [
+            FakeResult(scalar_one=filing),
+            FakeResult(all_rows=[(chat_id, True, []) for chat_id in chat_ids]),
+        ]
     )
     mock_send, mock_ack, mock_dead_letter = patch_common(monkeypatch, session)
 
@@ -118,7 +119,10 @@ async def test_one_blocked_chat_id_does_not_stop_delivery_to_others(monkeypatch)
     filing = make_filing(SignalStrength.MEDIUM)
     chat_ids = [111, 222]
     session = FakeSession(
-        [FakeResult(scalar_one=filing), FakeResult(scalars_all=chat_ids)]
+        [
+            FakeResult(scalar_one=filing),
+            FakeResult(all_rows=[(chat_id, True, []) for chat_id in chat_ids]),
+        ]
     )
     mock_send, mock_ack, mock_dead_letter = patch_common(monkeypatch, session)
     mock_send.side_effect = [TelegramError("bot was blocked by the user"), None]
@@ -130,6 +134,32 @@ async def test_one_blocked_chat_id_does_not_stop_delivery_to_others(monkeypatch)
     session.commit.assert_called_once()
     mock_dead_letter.assert_not_called()
     mock_ack.assert_called_once()
+
+
+async def test_filters_by_alert_mode_and_watchlist(monkeypatch):
+    filing = make_filing(SignalStrength.HIGH)  # issuer_ticker="TEST"
+    session = FakeSession(
+        [
+            FakeResult(scalar_one=filing),
+            FakeResult(
+                all_rows=[
+                    (111, True, []),  # all-mode: gets everything
+                    (222, False, ["TEST"]),  # custom-mode, ticker matches
+                    (333, False, ["OTHER"]),  # custom-mode, ticker doesn't match
+                ]
+            ),
+        ]
+    )
+    mock_send, mock_ack, mock_dead_letter = patch_common(monkeypatch, session)
+
+    await notification_main.process_notification("5-0", {"accession_number": ACCESSION})
+
+    sent_to = {call.kwargs["chat_id"] for call in mock_send.call_args_list}
+    assert sent_to == {111, 222}
+    assert filing.pipeline_status == PipelineStatus.NOTIFIED
+    session.commit.assert_called_once()
+    mock_dead_letter.assert_not_called()
+    mock_ack.assert_called_once_with("filing.classified", "notification_group", "5-0")
 
 
 async def test_dead_letters_when_message_building_fails_on_bad_data(monkeypatch):
