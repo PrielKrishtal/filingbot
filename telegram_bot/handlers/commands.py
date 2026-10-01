@@ -144,9 +144,9 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         valid_tickers = await get_valid_tickers()
 
-    except HTTPError as error:
+    except HTTPError:
         await update.message.reply_text("can't verify tickers right now")
-        base_logger.error(f"Error - {error} during get_valid_tickers() ")
+        base_logger.exception("Error - during get_valid_tickers() ")
         return
 
     if new_ticker not in valid_tickers:
