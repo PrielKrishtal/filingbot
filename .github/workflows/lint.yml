@@ -1,4 +1,4 @@
-name: Lint
+name: CI
 
 on:
   push:
@@ -14,10 +14,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -26,3 +26,12 @@ jobs:
 
       - name: Run ruff check
         run: ruff check .
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci
+          REDIS_URL: redis://localhost:6379
+          TELEGRAM_BOT_TOKEN: "0:ci-dummy-token"
+          SEC_USER_AGENT: FilingBot CI ci@example.com
+          GROQ_API_KEY: ci-dummy-key
+        run: pytest -q

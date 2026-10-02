@@ -6,6 +6,14 @@ repos:
 
   - repo: local
     hooks:
+      - id: pytest
+        name: Run tests
+        entry: python -m pytest -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: strip-claude-attribution
         name: Strip Claude co-author attribution
         entry: sed -i "/^Co-authored-by:.*[Cc]laude/Id" --
