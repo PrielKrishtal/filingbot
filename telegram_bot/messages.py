@@ -1,7 +1,7 @@
 from html import escape
 
-SUCCESS_ICON = "🟢"
-ERROR_ICON = "🔴"
+SUCCESS_ICON = "✅"
+ERROR_ICON = "⛔"
 WATCHLIST_ICON = "📋"
 WELCOME_ICON = "👋"
 
