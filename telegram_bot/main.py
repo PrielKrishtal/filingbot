@@ -9,6 +9,7 @@ from telegram.ext import (
 
 from core.config import settings
 from core.logging_config import get_logger
+from core.sentry_config import init_sentry
 from telegram_bot.handlers.commands import (
     add,
     handle_alert_mode_choice,
@@ -45,6 +46,7 @@ def build_application() -> Application:
 
 
 def main() -> None:
+    init_sentry("telegram_bot")
     app = build_application()
     base_logger.info("telegram bot starting, polling for updates")
     app.run_polling()

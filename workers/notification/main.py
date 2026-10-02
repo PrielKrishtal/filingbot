@@ -13,6 +13,7 @@ from core.database.session import AsyncSessionLocal
 from core.logging_config import get_logger
 from core.redis_client import ack, consume, create_consumer_group, dead_letter
 from core.schemas.enums import PipelineStatus, SignalStrength
+from core.sentry_config import init_sentry
 from workers.notification.message_builder import build_alert_message
 
 base_logger = get_logger("notification")
@@ -98,4 +99,5 @@ async def classified_filings_consumer():
 
 
 if __name__ == "__main__":
+    init_sentry("notification")
     asyncio.run(classified_filings_consumer())

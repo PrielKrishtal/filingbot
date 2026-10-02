@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     telegram_bot_token: str
     sec_user_agent: str
     groq_api_key: str
+    sentry_dsn: str | None = None
+    environment: str = "development"
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

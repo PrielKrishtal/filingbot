@@ -40,6 +40,9 @@ python-dotenv
 # Logging
 python-json-logger
 
+# Error tracking
+sentry-sdk
+
 # Testing
 pytest
 pytest-asyncio

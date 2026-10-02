@@ -12,6 +12,7 @@ from core.logging_config import get_logger
 from core.redis_client import ack, consume, create_consumer_group, dead_letter, publish
 from core.schemas.enums import PipelineStatus
 from core.schemas.filing import InsiderFiling
+from core.sentry_config import init_sentry
 from workers.classification.classifier import classify_filing
 from workers.classification.history_service import get_insider_history
 
@@ -83,4 +84,5 @@ async def raw_filings_consumer():
 
 
 if __name__ == "__main__":
+    init_sentry("classification")
     asyncio.run(raw_filings_consumer())

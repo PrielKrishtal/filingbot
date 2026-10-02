@@ -12,6 +12,7 @@ from core.database.session import AsyncSessionLocal
 from core.logging_config import get_logger
 from core.redis_client import get_value, publish, set_value
 from core.schemas.filing import InsiderFiling
+from core.sentry_config import init_sentry
 from ingestion.edgar_poller import poll_new_filings
 
 base_logger = get_logger("ingestion")
@@ -21,6 +22,7 @@ scheduler = AsyncIOScheduler()
 @asynccontextmanager
 async def ingestion_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global since
+    init_sentry("ingestion")
     last_stored = await get_value("ingestion:last_polled_timestamp")
     if last_stored:
         since = datetime.fromisoformat(last_stored) 
