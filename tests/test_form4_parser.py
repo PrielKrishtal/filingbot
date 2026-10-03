@@ -2,8 +2,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from core.schemas.enums import TransactionCode
-from ingestion.form4_parser import parse_form4
+from ingestion.form4_parser import UnsupportedFiling, parse_form4
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -81,3 +83,40 @@ def test_shares_owned_after():
       result = parse_form4(xml, ACCESSION, FILING_DATE)
 
       assert result.shares_owned_after == Decimal("48576.5643")
+
+
+DERIVATIVE_ONLY_XML = """<ownershipDocument>
+    <issuer>
+        <issuerCik>0001318605</issuerCik>
+        <issuerName>Tesla, Inc.</issuerName>
+        <issuerTradingSymbol>TSLA</issuerTradingSymbol>
+    </issuer>
+    <derivativeTable>
+        <derivativeTransaction>
+            <transactionCoding><transactionCode>A</transactionCode></transactionCoding>
+        </derivativeTransaction>
+    </derivativeTable>
+</ownershipDocument>"""
+
+NO_TICKER_XML = """<ownershipDocument>
+    <issuer>
+        <issuerCik>0001318605</issuerCik>
+        <issuerName>Some Private Co</issuerName>
+        <issuerTradingSymbol>N/A</issuerTradingSymbol>
+    </issuer>
+    <nonDerivativeTable>
+        <nonDerivativeTransaction>
+            <transactionCoding><transactionCode>P</transactionCode></transactionCoding>
+        </nonDerivativeTransaction>
+    </nonDerivativeTable>
+</ownershipDocument>"""
+
+
+def test_derivative_only_filing_is_skipped_not_an_error():
+    with pytest.raises(UnsupportedFiling, match="derivative-only"):
+        parse_form4(DERIVATIVE_ONLY_XML, ACCESSION, FILING_DATE)
+
+
+def test_unusable_ticker_is_skipped_not_an_error():
+    with pytest.raises(UnsupportedFiling, match="unusable ticker"):
+        parse_form4(NO_TICKER_XML, ACCESSION, FILING_DATE)

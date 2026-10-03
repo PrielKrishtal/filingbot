@@ -6,7 +6,7 @@ from lxml import etree
 from core.config import settings
 from core.logging_config import get_logger
 from core.schemas.filing import InsiderFiling
-from ingestion.form4_parser import parse_form4
+from ingestion.form4_parser import UnsupportedFiling, parse_form4
 from ingestion.rate_limiter import throttled_get
 
 base_logger = get_logger("ingestion")
@@ -86,6 +86,9 @@ async def poll_new_filings(since: datetime) -> list[InsiderFiling]:
         try:
             filing = parse_form4(xml_response.text, accession, filing_date)
             filings.append(filing)
+        except UnsupportedFiling as reason:
+            log.info("skipped filing: %s", reason)
+            continue
         except Exception:
             log.exception("failed to parse filing")
             continue

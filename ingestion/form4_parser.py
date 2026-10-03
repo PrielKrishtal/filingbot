@@ -6,6 +6,12 @@ from lxml import etree
 from core.schemas.enums import TransactionCode
 from core.schemas.filing import InsiderFiling
 
+UNUSABLE_TICKERS = {"", "N/A", "NONE"}
+
+
+class UnsupportedFiling(Exception):
+    """Raised for a valid Form 4 that deals with options(not stocks)/lacks ticker symbol"""
+
 
 def xpath_text(root, path: str) -> str:
     matches = root.xpath(path)
@@ -43,11 +49,18 @@ def resolve_insider_title(root) -> str:
 def parse_form4(xml_content: str, accession_number: str, filing_date: datetime) -> InsiderFiling:
     root = etree.fromstring(xml_content.encode())
 
-    return InsiderFiling(                                                                                                                                                                       
-        accession_number= accession_number,                    
-        filing_date = filing_date,                                                                                                                                                                
-        issuer_name = xpath_text(root,"//issuerName/text()"),                                                                                                                                                                        
-        issuer_ticker = xpath_text(root,"//issuerTradingSymbol/text()"),                                                                                                                                                                     
+    if not root.xpath("//nonDerivativeTransaction"):
+        raise UnsupportedFiling("derivative-only filing, no share transaction")
+
+    ticker = xpath_text(root, "//issuerTradingSymbol/text()").strip().upper()
+    if ticker in UNUSABLE_TICKERS:
+        raise UnsupportedFiling(f"unusable ticker: {ticker!r}")
+
+    return InsiderFiling(
+        accession_number= accession_number,
+        filing_date = filing_date,
+        issuer_name = xpath_text(root,"//issuerName/text()"),
+        issuer_ticker = ticker,                                                                                                                                                                   
         issuer_cik = xpath_text(root,"//issuerCik/text()"),                                          
         insider_name = xpath_text(root,"//rptOwnerName/text()"),   
         insider_title = resolve_insider_title(root),
