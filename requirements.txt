@@ -1,51 +1,51 @@
 # Web framework + ASGI server
-fastapi
-uvicorn[standard]
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
 
 # Scheduling
-apscheduler
+apscheduler==3.11.3
 
 # Validation + config
-pydantic
-pydantic-settings
+pydantic==2.13.5
+pydantic-settings==2.15.0
 
 # Database
-sqlalchemy[asyncio]
-asyncpg
-alembic
+sqlalchemy[asyncio]==2.1.3
+asyncpg==0.31.0
+alembic==1.20.0
 
 # Redis
-redis
-hiredis
+redis==8.1.0
+hiredis==3.4.2
 
 # Async HTTP client
-httpx
+httpx==0.28.1
 
 # LLM
-groq
+groq==1.7.0
 
 # Embeddings + vector DB(currently not used)
 # sentence-transformers
 # chromadb
 
 # Parsing
-lxml
+lxml==6.1.3
 
 # Telegram
-python-telegram-bot
+python-telegram-bot==22.8
 
 # Config
-python-dotenv
+python-dotenv==1.2.4
 
 # Logging
-python-json-logger
+python-json-logger==4.2.0
 
 # Error tracking
-sentry-sdk
+sentry-sdk==2.71.0
 
 # Testing
-pytest
-pytest-asyncio
+pytest==9.1.1
+pytest-asyncio==1.4.0
 
 # Linting
 ruff==0.16.5
