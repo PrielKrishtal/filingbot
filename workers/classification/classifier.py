@@ -5,6 +5,11 @@ from pydantic import ValidationError
 
 from core.config import settings
 from core.logging_config import get_logger
+from core.schemas.enums import (
+    SignalStrength,
+    TransactionClassification,
+    TransactionCode,
+)
 from core.schemas.filing import ClassificationResult, InsiderFiling, InsiderHistory
 from workers.classification.prompts import (
     SYSTEM_PROMPT,
@@ -15,6 +20,23 @@ from workers.classification.prompts import (
 base_logger = get_logger("classification")
 client = AsyncGroq(api_key=settings.groq_api_key)
 json_schema = ClassificationResult.model_json_schema()
+
+# Grants and tax withholding skip the LLM - they happen to an insider, not by choice.
+MECHANICAL_TRANSACTIONS = {
+    TransactionCode.F: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.tax_disposition,
+        reasoning=(
+            "Shares withheld automatically to cover taxes on a vesting grant "
+            "- not a discretionary trade."
+        ),
+    ),
+    TransactionCode.A: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="Company stock grant - shares received, not purchased.",
+    ),
+}
 
 
 async def _call_groq(messages: list) -> str:
@@ -30,7 +52,19 @@ async def _call_groq(messages: list) -> str:
         },
         model="openai/gpt-oss-120b",
     )
+
+    usage = chat_completion.usage
+    base_logger.info(
+        "groq call complete",
+        extra={
+            "prompt_tokens": usage.prompt_tokens,
+            "completion_tokens": usage.completion_tokens,
+            "total_tokens": usage.total_tokens,
+        },
+    )
+
     return chat_completion.choices[0].message.content
+
 
 
 async def classify_filing(
@@ -39,6 +73,13 @@ async def classify_filing(
     log = logging.LoggerAdapter(
         base_logger, extra={"correlation_id": filing.accession_number}
     )
+
+    # Skip the LLM for grants and tax withholding.
+    rule_result = MECHANICAL_TRANSACTIONS.get(filing.transaction_code)
+    if rule_result is not None:
+        log.info("classified by rule, skipped LLM")
+        return rule_result.model_copy()
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": build_user_prompt(filing, history)},
