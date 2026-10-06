@@ -42,7 +42,6 @@ async def process_classifying(message_id: str, filing_ref: dict[str, str]):
             result.classification = classification.transaction_classification
             result.classification_reasoning = classification.reasoning
             result.signal_strength = classification.signal_strength
-            result.enriched = classification.enrich
             result.pipeline_status = PipelineStatus.CLASSIFIED
             await session.commit()
             await publish(

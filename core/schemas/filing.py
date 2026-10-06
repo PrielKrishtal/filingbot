@@ -41,4 +41,3 @@ class ClassificationResult(BaseModel):
     signal_strength: SignalStrength
     transaction_classification: TransactionClassification
     reasoning: str
-    enrich: bool

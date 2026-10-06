@@ -64,7 +64,6 @@ async def test_classify_filing_success(monkeypatch):
         "signal_strength": "HIGH",
         "transaction_classification": "voluntary_purchase",
         "reasoning": "insider bought after a run of sales",
-        "enrich": True,
     })
 
     mock_call_groq = AsyncMock(return_value=canned_response)
@@ -74,7 +73,7 @@ async def test_classify_filing_success(monkeypatch):
 
     assert result.signal_strength.value == "HIGH"
     assert result.transaction_classification.value == "voluntary_purchase"
-    assert result.enrich is True
+    assert result.reasoning == "insider bought after a run of sales"
     mock_call_groq.assert_called_once()
 
 
@@ -94,7 +93,6 @@ async def test_classify_filing_retries_then_succeeds(monkeypatch):
         "signal_strength": "HIGH",
         "transaction_classification": "voluntary_purchase",
         "reasoning": "insider bought after a run of sales",
-        "enrich": True,
     })
 
     mock_call_groq = AsyncMock(side_effect=[invalid_response, valid_response])
