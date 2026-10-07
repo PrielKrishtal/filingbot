@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import math
 import socket
 
+from groq import RateLimitError
 from pydantic import ValidationError
 from redis.exceptions import TimeoutError
 from sqlalchemy import select
@@ -17,6 +19,10 @@ from workers.classification.classifier import classify_filing
 from workers.classification.history_service import get_insider_history
 
 base_logger = get_logger("classification")
+INITIAL_BACKOFF_SECONDS = 60
+MAX_BACKOFF_SECONDS = 30 * 60
+MAX_RETRY_AFTER_SECONDS = 24 * 60 * 60
+BACKOFF_FACTOR = 2
 
 
 async def process_classifying(message_id: str, filing_ref: dict[str, str]):
@@ -61,8 +67,24 @@ async def process_classifying(message_id: str, filing_ref: dict[str, str]):
         await ack("filing.raw", "classification_group", message_id)
 
 
+def parse_retry_after(raw_val: str | None) -> float | None:
+    if raw_val is None:
+        return None
+
+    try:
+        seconds = float(raw_val)
+    except ValueError:
+        return None
+
+    if not math.isfinite(seconds) or seconds <= 0:
+        return None
+
+    return min(seconds, MAX_RETRY_AFTER_SECONDS)  # cap the wait time to 24 hours
+
+
 async def raw_filings_consumer():
     await create_consumer_group("filing.raw", "classification_group")
+    current_delay = INITIAL_BACKOFF_SECONDS
     while True:
         try:
             response = await consume(
@@ -76,10 +98,34 @@ async def raw_filings_consumer():
         except TimeoutError:
             continue
 
-
         messages = response[0][1]
         for message_id, fields in messages:
-            await process_classifying(message_id, fields)
+            try:
+                await process_classifying(message_id, fields)
+                current_delay = INITIAL_BACKOFF_SECONDS
+
+            except RateLimitError as e:
+                raw_retry_after = e.response.headers.get("retry-after")
+                wait_time = parse_retry_after(raw_retry_after)
+
+                if wait_time is not None:
+                    base_logger.error(
+                        "groq rate limit hit, pausing classification",
+                        extra={"wait_seconds": wait_time, "source": "retry-after"},
+                    )
+
+                    await asyncio.sleep(wait_time)
+
+                else:
+                    base_logger.error(
+                        "groq rate limit hit, pausing classification",
+                        extra={"wait_seconds": current_delay, "source": "backoff"},
+                    )
+
+                    await asyncio.sleep(current_delay)
+                    current_delay = min(
+                        current_delay * BACKOFF_FACTOR, MAX_BACKOFF_SECONDS
+                    )
 
 
 if __name__ == "__main__":
