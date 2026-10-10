@@ -37,19 +37,7 @@ FilingBot filters that stream down to the trades worth knowing about:
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    SEC["SEC EDGAR"] -->|"Form 4 XML"| ING["Ingestion<br/>FastAPI + APScheduler"]
-    ING -->|"filing.raw"| CLS["Classification worker<br/>rules or Groq LLM"]
-    CLS -->|"filing.classified"| NOT["Notification worker"]
-    NOT -->|"HIGH / MEDIUM"| TG["Telegram"]
-    CLS -.->|"invalid output after retry"| DLQ["filing.dead_letter"]
-    NOT -.->|"bad data"| DLQ
-    ING --- PG[("PostgreSQL")]
-    CLS --- PG
-    NOT --- PG
-    BOT["Telegram bot<br/>/start /watchlist /add /remove"] --- PG
-```
+![FilingBot architecture](assets/diagram%20without%20name.png)
 
 Each stage runs in its own Docker container. Stages communicate only through **Redis Streams** with consumer groups, and a worker acknowledges a message only after it has finished processing it. Every filing's pipeline status is tracked in PostgreSQL.
 
