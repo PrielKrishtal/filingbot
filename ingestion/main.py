@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
+import sentry_sdk
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from sqlalchemy.exc import IntegrityError
@@ -39,19 +40,21 @@ async def process_filing(filing:InsiderFiling ):
     log.info("fetched filing")
 
     db_filing = Filing(**filing.model_dump()) #new filing row
-    async with AsyncSessionLocal() as session:
-        session.add(db_filing)
-        try:
-            await session.commit()
-            await publish("filing.raw", {"accession_number": filing.accession_number})
+    with sentry_sdk.new_scope() as scope:
+        scope.set_tag("correlation_id", db_filing.accession_number)
+        async with AsyncSessionLocal() as session:
+            session.add(db_filing)
+            try:
+                await session.commit()
+                await publish("filing.raw", {"accession_number": filing.accession_number})
 
-        except IntegrityError:          #enforcing idempotency,skip on duplicates
-            await session.rollback()
-            log.debug("duplicate filing, skipping")
+            except IntegrityError:          #enforcing idempotency,skip on duplicates
+                await session.rollback()
+                log.debug("duplicate filing, skipping")
 
-        except Exception:
-            await session.rollback()
-            log.exception("failed to save filing")
+            except Exception:
+                await session.rollback()
+                log.exception("failed to save filing")
 
        
 

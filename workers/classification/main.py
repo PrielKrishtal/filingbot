@@ -3,7 +3,8 @@ import logging
 import math
 import socket
 
-from groq import RateLimitError
+import sentry_sdk
+from groq import InternalServerError, RateLimitError
 from pydantic import ValidationError
 from redis.exceptions import TimeoutError
 from sqlalchemy import select
@@ -24,47 +25,48 @@ MAX_BACKOFF_SECONDS = 30 * 60
 MAX_RETRY_AFTER_SECONDS = 24 * 60 * 60
 BACKOFF_FACTOR = 2
 
-
 async def process_classifying(message_id: str, filing_ref: dict[str, str]):
-    async with AsyncSessionLocal() as session:
-        stmt = select(Filing).where(
-            Filing.accession_number == filing_ref["accession_number"]
-        )
-        result = (await session.execute(stmt)).scalar_one()
-        history = await get_insider_history(
-            session=session,
-            insider_name=result.insider_name,
-            issuer_cik=result.issuer_cik,
-            before=result.filing_date,
-            current_transaction_code=result.transaction_code,
-        )
-        filing = InsiderFiling.model_validate(result)
-        log = logging.LoggerAdapter(
-            base_logger, extra={"correlation_id": filing.accession_number}
-        )
-
-        try:
-            classification = await classify_filing(filing, history)
-            result.classification = classification.transaction_classification
-            result.classification_reasoning = classification.reasoning
-            result.signal_strength = classification.signal_strength
-            result.pipeline_status = PipelineStatus.CLASSIFIED
-            await session.commit()
-            await publish(
-                "filing.classified", {"accession_number": filing.accession_number}
+    with sentry_sdk.new_scope() as scope:
+        async with AsyncSessionLocal() as session:
+            stmt = select(Filing).where(
+                Filing.accession_number == filing_ref["accession_number"]
             )
-
-        except ValidationError as e:
-            await dead_letter(
-                message=filing_ref["accession_number"],
-                error=str(e),
-                stream="filing.raw",
-                retries=1,
+            result = (await session.execute(stmt)).scalar_one()
+            history = await get_insider_history(
+                session=session,
+                insider_name=result.insider_name,
+                issuer_cik=result.issuer_cik,
+                before=result.filing_date,
+                current_transaction_code=result.transaction_code,
             )
-            log.exception("classification failed, sending to dead letter")
-            await session.rollback()
+            filing = InsiderFiling.model_validate(result)
+            log = logging.LoggerAdapter(
+                base_logger, extra={"correlation_id": filing.accession_number}
+            )
+            scope.set_tag("correlation_id", filing_ref["accession_number"])
 
-        await ack("filing.raw", "classification_group", message_id)
+            try:
+                classification = await classify_filing(filing, history)
+                result.classification = classification.transaction_classification
+                result.classification_reasoning = classification.reasoning
+                result.signal_strength = classification.signal_strength
+                result.pipeline_status = PipelineStatus.CLASSIFIED
+                await session.commit()
+                await publish(
+                    "filing.classified", {"accession_number": filing.accession_number}
+                )
+
+            except ValidationError as e:
+                await dead_letter(
+                    message=filing_ref["accession_number"],
+                    error=str(e),
+                    stream="filing.raw",
+                    retries=1,
+                )
+                log.exception("classification failed, sending to dead letter")
+                await session.rollback()
+
+            await ack("filing.raw", "classification_group", message_id)
 
 
 def parse_retry_after(raw_val: str | None) -> float | None:
@@ -104,25 +106,23 @@ async def raw_filings_consumer():
                 await process_classifying(message_id, fields)
                 current_delay = INITIAL_BACKOFF_SECONDS
 
-            except RateLimitError as e:
+            except (RateLimitError, InternalServerError) as e:
                 raw_retry_after = e.response.headers.get("retry-after")
                 wait_time = parse_retry_after(raw_retry_after)
+                source = "retry-after" if wait_time is not None else "backoff"
+                wait_seconds = wait_time if wait_time is not None else current_delay
 
-                if wait_time is not None:
-                    base_logger.error(
-                        "groq rate limit hit, pausing classification",
-                        extra={"wait_seconds": wait_time, "source": "retry-after"},
-                    )
+                base_logger.error(
+                    "groq unavailable, pausing classification",
+                    extra={
+                        "error": type(e).__name__,
+                        "wait_seconds": wait_seconds,
+                        "source": source,
+                    },
+                )
+                await asyncio.sleep(wait_seconds)
 
-                    await asyncio.sleep(wait_time)
-
-                else:
-                    base_logger.error(
-                        "groq rate limit hit, pausing classification",
-                        extra={"wait_seconds": current_delay, "source": "backoff"},
-                    )
-
-                    await asyncio.sleep(current_delay)
+                if source == "backoff":
                     current_delay = min(
                         current_delay * BACKOFF_FACTOR, MAX_BACKOFF_SECONDS
                     )
