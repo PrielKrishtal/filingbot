@@ -68,7 +68,7 @@ def describe_transaction(code: TransactionCode) -> tuple[str, str]:
         case TransactionCode.F:
             return (MARKER_NEUTRAL, "WITHHOLD")
         case _:
-            return (MARKER_NEUTRAL,"OTHER")
+            return (MARKER_NEUTRAL, "OTHER")
 
 
 def format_compact_usd(value: Decimal) -> str:

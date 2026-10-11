@@ -35,20 +35,21 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
             if result.signal_strength in (SignalStrength.HIGH, SignalStrength.MEDIUM):
                 try:
                     message = build_alert_message(result)
-                    stmt = select(User.telegram_chat_id, User.alerts_all, User.watchlist)
+                    stmt = select(
+                        User.telegram_chat_id, User.alerts_all, User.watchlist
+                    )
                     users = (await session.execute(stmt)).all()
+                    num_users_sent = 0
 
                     for users_chat_id, users_alert_all, users_watchlist in users:
-                        if (
-                            not users_alert_all
-                            and result.issuer_ticker.upper() not in users_watchlist
-                        ):
+                        if (not users_alert_all and result.issuer_ticker.upper() not in users_watchlist):
                             continue
 
                         try:
                             await bot.send_message(
                                 chat_id=users_chat_id, text=message, parse_mode="HTML"
                             )
+                            num_users_sent += 1
 
                         except TelegramError as error:
                             log.error(
@@ -58,6 +59,13 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
 
                     result.pipeline_status = PipelineStatus.NOTIFIED
                     await session.commit()
+                    log.info(
+                        "alert sent",
+                        extra={
+                            "signal_strength": result.signal_strength.value,
+                            "recipients": num_users_sent,
+                        },
+                    )
 
                 except (TypeError, AttributeError) as e:
                     await dead_letter(
@@ -70,15 +78,18 @@ async def process_notification(message_id: str, filing_ref: dict[str, str]) -> N
                     await session.rollback()
 
             else:
-                result.pipeline_status = (
-                    PipelineStatus.SKIPPED
-                )  # if signal is low,noise skip notifying
+                result.pipeline_status = (PipelineStatus.SKIPPED)  # if signal is low,noise skip notifying
                 await session.commit()
+                log.info(
+                    "filing skipped",
+                    extra={"signal_strength": result.signal_strength.value},
+                )
 
             await ack("filing.classified", "notification_group", message_id)
 
 
 async def classified_filings_consumer():
+    base_logger.info("notification worker started")
     await create_consumer_group("filing.classified", "notification_group")
     await bot.initialize()
 

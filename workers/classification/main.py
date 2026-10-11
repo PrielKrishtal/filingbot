@@ -25,6 +25,7 @@ MAX_BACKOFF_SECONDS = 30 * 60
 MAX_RETRY_AFTER_SECONDS = 24 * 60 * 60
 BACKOFF_FACTOR = 2
 
+
 async def process_classifying(message_id: str, filing_ref: dict[str, str]):
     with sentry_sdk.new_scope() as scope:
         scope.set_tag("correlation_id", filing_ref["accession_number"])
@@ -44,7 +45,7 @@ async def process_classifying(message_id: str, filing_ref: dict[str, str]):
             log = logging.LoggerAdapter(
                 base_logger, extra={"correlation_id": filing.accession_number}
             )
-         
+
             try:
                 classification = await classify_filing(filing, history)
                 result.classification = classification.transaction_classification
@@ -52,6 +53,13 @@ async def process_classifying(message_id: str, filing_ref: dict[str, str]):
                 result.signal_strength = classification.signal_strength
                 result.pipeline_status = PipelineStatus.CLASSIFIED
                 await session.commit()
+                log.info(
+                    "filing classified",
+                    extra={
+                        "signal_strength": result.signal_strength.value,
+                        "transaction_classification": result.classification.value,
+                    },
+                )
                 await publish(
                     "filing.classified", {"accession_number": filing.accession_number}
                 )
@@ -85,6 +93,7 @@ def parse_retry_after(raw_val: str | None) -> float | None:
 
 
 async def raw_filings_consumer():
+    base_logger.info("classification worker started")
     await create_consumer_group("filing.raw", "classification_group")
     current_delay = INITIAL_BACKOFF_SECONDS
     while True:
