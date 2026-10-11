@@ -39,9 +39,9 @@ async def process_filing(filing:InsiderFiling ):
     log = logging.LoggerAdapter(base_logger, extra={"correlation_id": filing.accession_number})
     log.info("fetched filing")
 
-    db_filing = Filing(**filing.model_dump()) #new filing row
     with sentry_sdk.new_scope() as scope:
-        scope.set_tag("correlation_id", db_filing.accession_number)
+        scope.set_tag("correlation_id", filing.accession_number)
+        db_filing = Filing(**filing.model_dump()) #new filing row
         async with AsyncSessionLocal() as session:
             session.add(db_filing)
             try:

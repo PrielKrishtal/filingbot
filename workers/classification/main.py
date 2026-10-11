@@ -27,6 +27,7 @@ BACKOFF_FACTOR = 2
 
 async def process_classifying(message_id: str, filing_ref: dict[str, str]):
     with sentry_sdk.new_scope() as scope:
+        scope.set_tag("correlation_id", filing_ref["accession_number"])
         async with AsyncSessionLocal() as session:
             stmt = select(Filing).where(
                 Filing.accession_number == filing_ref["accession_number"]
@@ -43,8 +44,7 @@ async def process_classifying(message_id: str, filing_ref: dict[str, str]):
             log = logging.LoggerAdapter(
                 base_logger, extra={"correlation_id": filing.accession_number}
             )
-            scope.set_tag("correlation_id", filing_ref["accession_number"])
-
+         
             try:
                 classification = await classify_filing(filing, history)
                 result.classification = classification.transaction_classification
