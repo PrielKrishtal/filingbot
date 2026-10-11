@@ -24,18 +24,23 @@ from workers.notification.message_builder import (
         (TransactionCode.P, (MARKER_BUY, "BUY")),
         (TransactionCode.S, (MARKER_SELL, "SELL")),
         (TransactionCode.M, (MARKER_NEUTRAL, "EXERCISE")),
+        (TransactionCode.X, (MARKER_NEUTRAL, "EXERCISE")),
+        (TransactionCode.O, (MARKER_NEUTRAL, "EXERCISE")),
         (TransactionCode.A, (MARKER_NEUTRAL, "AWARD")),
         (TransactionCode.G, (MARKER_NEUTRAL, "GIFT")),
         (TransactionCode.F, (MARKER_NEUTRAL, "WITHHOLD")),
+        (TransactionCode.C, (MARKER_NEUTRAL, "OTHER")),
+        (TransactionCode.J, (MARKER_NEUTRAL, "OTHER")),
     ],
 )
 def test_describe_transaction(code: TransactionCode, expected_tuple: tuple[str, str]):
     assert describe_transaction(code) == expected_tuple
 
 
-def test_describe_transaction_unknown_code_raises():
-    with pytest.raises(ValueError, match="no marker/verb defined"):
-        describe_transaction("Test")
+def test_describe_transaction_never_raises_for_any_sec_code():
+    for code in TransactionCode:
+        marker, action = describe_transaction(code)
+        assert marker and action
 
 
 @pytest.mark.parametrize(

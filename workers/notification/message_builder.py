@@ -59,7 +59,7 @@ def describe_transaction(code: TransactionCode) -> tuple[str, str]:
             return (MARKER_BUY, "BUY")
         case TransactionCode.S:
             return (MARKER_SELL, "SELL")
-        case TransactionCode.M:
+        case TransactionCode.M | TransactionCode.O | TransactionCode.X:
             return (MARKER_NEUTRAL, "EXERCISE")
         case TransactionCode.A:
             return (MARKER_NEUTRAL, "AWARD")
@@ -68,7 +68,7 @@ def describe_transaction(code: TransactionCode) -> tuple[str, str]:
         case TransactionCode.F:
             return (MARKER_NEUTRAL, "WITHHOLD")
         case _:
-            raise ValueError(f"no marker/verb defined for {code}")
+            return (MARKER_NEUTRAL,"OTHER")
 
 
 def format_compact_usd(value: Decimal) -> str:

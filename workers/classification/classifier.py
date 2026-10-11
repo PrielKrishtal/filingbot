@@ -21,7 +21,7 @@ base_logger = get_logger("classification")
 client = AsyncGroq(api_key=settings.groq_api_key)
 json_schema = ClassificationResult.model_json_schema()
 
-# Grants and tax withholding skip the LLM - they happen to an insider, not by choice.
+# Transactions that happen to an insider rather than by their choice skip the LLM.
 MECHANICAL_TRANSACTIONS = {
     TransactionCode.F: ClassificationResult(
         signal_strength=SignalStrength.NOISE,
@@ -35,6 +35,31 @@ MECHANICAL_TRANSACTIONS = {
         signal_strength=SignalStrength.NOISE,
         transaction_classification=TransactionClassification.other,
         reasoning="Company stock grant - shares received, not purchased.",
+    ),
+    TransactionCode.W: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="Shares inherited by will or estate transfer - not a trading decision.",
+    ),
+    TransactionCode.Z: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="Shares moved into or out of a voting trust - ownership unchanged.",
+    ),
+    TransactionCode.E: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="A short derivative position expired - no trade was made.",
+    ),
+    TransactionCode.H: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="A long derivative position expired or was cancelled - no trade was made.",
+    ),
+    TransactionCode.L: ClassificationResult(
+        signal_strength=SignalStrength.NOISE,
+        transaction_classification=TransactionClassification.other,
+        reasoning="Small acquisition below the SEC reporting threshold - too minor to signal.",
     ),
 }
 
@@ -64,7 +89,6 @@ async def _call_groq(messages: list) -> str:
     )
 
     return chat_completion.choices[0].message.content
-
 
 
 async def classify_filing(

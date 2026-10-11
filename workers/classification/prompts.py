@@ -5,7 +5,10 @@ from a SEC Form 4 filing, plus that insider's trading history at the same compan
 Classify whether this transaction signals insider confidence or is routine/administrative.
 
 Consider:
-1. Transaction code — P=purchase, S=sale, M=option exercise, A=award/grant, G=gift, F=tax withholding.
+1. Transaction code — P=open-market purchase, S=open-market sale, M=option exercise (plan),
+   X=in-the-money option exercise, O=out-of-the-money option exercise, C=derivative conversion,
+   D=shares returned to the company, I=discretionary plan trade, J=other acquisition or disposition,
+   K=equity swap, U=tendered in a takeover, V=voluntarily reported early, G=gift.
 2. Insider title — CEO/CFO/COO/President carry the highest signal.
 3. Dollar value — above $100K is notable, above $500K is very significant.
 4. 10b5-1 flag — if set, this was pre-planned, lower signal.
