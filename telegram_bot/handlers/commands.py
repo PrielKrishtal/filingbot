@@ -52,7 +52,7 @@ async def get_registered_user(session: AsyncSession, update: Update) -> User | N
     user = (await session.execute(stmt)).scalar_one_or_none()
 
     if user is None:
-        base_logger.warning(f"User {chat_id} not registered")
+        base_logger.warning("user not registered", extra={"chat_id": chat_id})
         await reply_html(update, NOT_REGISTERED_MESSAGE)
         return None
 
@@ -104,7 +104,7 @@ async def handle_alert_mode_choice(
         if choice == "alerts:custom"
         else ALL_COMPANIES_CHOSEN_MESSAGE
     )
-    await update.callback_query.message.reply_text(button_response)
+    await update.effective_chat.send_message(button_response)
 
 
 async def watchlist(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -145,7 +145,9 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     except HTTPError:
         await reply_html(update, TICKERS_UNAVAILABLE_MESSAGE)
-        base_logger.exception("Error - during get_valid_tickers() ")
+        base_logger.exception(
+            "ticker list fetch failed", extra={"chat_id": update.effective_chat.id}
+        )
         return
 
     if new_ticker not in valid_tickers:
